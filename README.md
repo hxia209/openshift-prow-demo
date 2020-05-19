@@ -4,13 +4,13 @@ This repository is used to document the steps I've taken in order to deploy Prow
 
 ## Unorganized steps and notes
 
-Create oauth toke on github
+Create oauth token on github
 
 openssl rand -hex 20 -out hmac-token
 
 oc create secret generic hmac-token --from-file=hmac=hmac-token
 
-oc create secret generic oauth-token --from-literal=oauth=c090948b63a0ff78526d3e9dece69edb8d783679
+oc create secret generic oauth-token --from-file=oauth=oauth-token
 
 https://github.com/kubernetes/test-infra/blob/master/config/prow/cluster/starter.yaml
   - cm_plugins - default
@@ -49,6 +49,33 @@ https://github.com/kubernetes/test-infra/blob/master/config/prow/cluster/starter
   - role_statusreconciler
   - rb_statusreconciler
   
+## Errors encountered
+
+ - **Fetching bot account name from github**
+ 
+``` json
+{
+    "component":"tide",
+    "error":"error getting bot name: fetching bot name from GitHub: status code 401 not one of [200], 
+    body: {\"message\":\"Bad credentials\",
+        \"documentation_url\":\"https://developer.github.com/v3\"}",
+    "file":"prow/cmd/tide/main.go:152",
+    "func":"main.main",
+    "level":"fatal",
+    "msg":"Error getting Git client.",
+    "time":"2020-05-19T15:31:21Z"
+}
+```
+   Solution/Workaround: Recreated oauth token on github
+
+
+  - **echo-test pods all failing**
+
+    `description: 'Job cannot be started: pods is forbidden: User "system:serviceaccount:prow:plank"
+     cannot create resource "pods" in API group "" in the namespace "test-pods"'`
+     
+     Solution/Workaround: Some roles were being created referencing "default" namespace. 
+
 
 ## References
 
