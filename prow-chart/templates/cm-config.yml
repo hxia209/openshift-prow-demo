@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+data:
+  config.yaml: |
+    prowjob_namespace: {{ .Values.namespace.prow }}
+    pod_namespace: {{ .Values.namespace.prowjob }}
+    presubmits:
+      {{ .Values.github.org }}/{{ .Values.github.repo }}:
+      - name: test-presubmit
+        decorate: true
+        always_run: true
+        skip_report: true
+        spec:
+          containers:
+          - image: alpine
+            command: ["/bin/printenv"]
+    postsubmits:
+      {{ .Values.github.org }}/{{ .Values.github.repo }}:
+      - name: test-postsubmit
+        decorate: true
+        spec:
+          containers:
+          - image: alpine
+            command: ["/bin/printenv"]

@@ -1,0 +1,7 @@
+namespace:
+  prow: prow
+  prowjob: test-pods
+
+github:
+  org: hxia209
+  repo: openshift-prow-demo

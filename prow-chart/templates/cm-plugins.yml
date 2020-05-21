@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plugins
+data:
+  plugins.yaml: |
+    plugins:
+      {{ .Values.github.org }}/{{ .Values.github.repo }}:
+      - size

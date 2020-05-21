@@ -2,30 +2,39 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sinker
+  name: plank
   labels:
-    app: sinker
+    app: plank
 spec:
   selector:
     matchLabels:
-      app: sinker
-  replicas: 1
+      app: plank
+  replicas: 1 # Do not scale up.
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
-        app: sinker
+        app: plank
     spec:
-      serviceAccountName: "sinker"
+      serviceAccountName: "plank"
       containers:
-        - name: sinker
-          image: gcr.io/k8s-prow/sinker:v20200513-6ad6776a6
+        - name: plank
+          image: gcr.io/k8s-prow/plank:v20200513-6ad6776a6
           args:
+            - --dry-run=false
             - --config-path=/etc/config/config.yaml
           volumeMounts:
+            - name: oauth
+              mountPath: /etc/github
+              readOnly: true
             - name: config
               mountPath: /etc/config
               readOnly: true
       volumes:
+        - name: oauth
+          secret:
+            secretName: oauth-token
         - name: config
           configMap:
             name: config
@@ -33,75 +42,62 @@ spec:
 kind: ServiceAccount
 apiVersion: v1
 metadata:
-  name: "sinker"
+  name: "plank"
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: "sinker"
+  name: "plank"
 rules:
   - apiGroups:
       - "prow.k8s.io"
     resources:
       - prowjobs
     verbs:
-      - delete
+      - get
+      - create
       - list
       - watch
-      - get
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    resourceNames:
-      - prow-sinker-leaderlock
-    verbs:
-      - get
       - update
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-      - events
-    verbs:
-      - create
+      - patch
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  namespace: test-pods
-  name: "sinker"
+  namespace: {{ .Values.namespace.prowjob }}
+  name: "plank"
 rules:
   - apiGroups:
       - ""
     resources:
       - pods
     verbs:
+      - create
       - delete
       - list
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: "sinker"
+  name: "plank"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: "sinker"
+  name: "plank"
 subjects:
   - kind: ServiceAccount
-    name: "sinker"
+    name: "plank"
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  namespace: test-pods
-  name: "sinker"
+  namespace: {{ .Values.namespace.prowjob }}
+  name: "plank"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: "sinker"
+  name: "plank"
 subjects:
   - kind: ServiceAccount
-    name: "sinker"
-    namespace: prow
+    name: "plank"
+    namespace: {{ .Values.namespace.prow }}
