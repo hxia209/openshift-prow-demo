@@ -1,55 +1,45 @@
-# openshift-prow-demo (test)
+# openshift-prow-demo
 
 This repository is used to document the steps I've taken in order to deploy Prow onto OpenShift 4
 
-## Unorganized steps and notes
+## Getting started
 
-Create oauth token on github
+All the steps were done following this [guide](https://github.com/kubernetes/test-infra/blob/master/prow/getting_started_deploy.md), adapting it to use _OCP4_ and avoiding using additional tools such as _bezel_.
 
-openssl rand -hex 20 -out hmac-token
+### Prerequisites
 
-oc create secret generic hmac-token --from-file=hmac=hmac-token
+Before installing the application in your OCP instance, makes sure you have all the necessary tools and resources.
 
-oc create secret generic oauth-token --from-file=oauth=oauth-token
+ - Running OCP instance
+ - oc client
+ - helm client
+ 
+ - Two namespaces created (do not forget to replace its values in [values.yaml](./prow-chart/values.yaml))
+ - hmac secret created.
+    ```
+   openssl rand -hex 20 -out hmac-token
+   oc create secret generic hmac-token --from-file=hmac=hmac-token
+   ```
+ - Github oauth secret created.
+    ```
+    Create oauth token on github
+    oc create secret generic oauth-token --from-file=oauth=oauth-token
+    ```
 
-https://github.com/kubernetes/test-infra/blob/master/config/prow/cluster/starter.yaml
-  - cm_plugins - default
-  - cm_config - default
-  - crd_prowjobs.prow.k8s.io - current
-  - deployment_hook - default
-  - svc_hook - default
-  - deployment_plank - default
-  - deployment_sinker - default
-  - deployment_deck - default
-  - svc_deck - default
-  - deployment_horologium - default
-  - deployment_tide - default
-  - svc_tide - default
-  - Ingress_ ing - default
-  - deployment_statusreconciler - default
-  - sa_deck
-  - rb-deck - default + testpods
-  - role_deck - default + testpods
-  - sa_horologium
-  - role_horologium
-  - rb_horologium
-  - sa_plank
-  - role_plank default + testpods
-  - rb_plank default + testpods
-  - sa_sinker
-  - role_sinker default + testpods
-  - rb_sinker default + testpods
-  - sa_hook
-  - role_hook
-  - rb_hook
-  - sa_tide
-  - role_tide
-  - rb_tide
-  - sa_statusreconciler
-  - role_statusreconciler
-  - rb_statusreconciler
+### Install
+```
+helm install prow prow-char
+```
+
+Below you can find a diagram depicting all the resources created by running the helm chart in this repository against your OCP cluster.
+
+![created resources](resources.jpeg)
+
+Resources were provisioned according to this [yaml file](https://github.com/kubernetes/test-infra/blob/master/config/prow/cluster/starter.yaml) from the official github page (see references).
   
 ## Errors encountered
+
+In this section, you can find a list of some errors I faced while deploying and configuring prow.
 
  - **Fetching bot account name from github**
  
@@ -75,6 +65,31 @@ https://github.com/kubernetes/test-infra/blob/master/config/prow/cluster/starter
      cannot create resource "pods" in API group "" in the namespace "test-pods"'`
      
      Solution/Workaround: Some roles were being created referencing "default" namespace. 
+     
+  - **Pull requests created in github aren't triggering prowjobs**
+  
+     With the following configured jobs, unable to see any jobs running in deck.
+     
+     ``` yaml
+    presubmits:
+      hxia209/openshift-prow-demo:
+      - name: test-presubmit
+        decorate: true
+        always_run: true
+        skip_report: true
+        spec:
+          containers:
+          - image: alpine
+            command: ["/bin/printenv"]
+    postsubmits:
+      hxia209/openshift-prow-demo:
+      - name: test-postsubmit
+        decorate: true
+        spec:
+          containers:
+          - image: alpine
+            command: ["/bin/printenv"]
+     ```
 
 
 ## References
