@@ -4,10 +4,10 @@ metadata:
   name: config
 data:
   config.yaml: |
-    prowjob_namespace: {{ .Values.namespace.prow }}
-    pod_namespace: {{ .Values.namespace.prowjob }}
+    prowjob_namespace: prow
+    pod_namespace: test-pods
     presubmits:
-      {{ .Values.github.org }}/{{ .Values.github.repo }}:
+      hxia209/openshift-prow-demo:
       - name: test-presubmit
         decorate: true
         always_run: true
@@ -17,7 +17,7 @@ data:
           - image: alpine
             command: ["/bin/printenv"]
     postsubmits:
-      {{ .Values.github.org }}/{{ .Values.github.repo }}:
+      hxia209/openshift-prow-demo:
       - name: test-postsubmit
         decorate: true
         spec:
